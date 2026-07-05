@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.core.config import settings
+from app.schemas.response import ApiResponse
 
 router = APIRouter(tags=["Health"])
 
@@ -15,8 +16,4 @@ async def root():
 
 @router.get("/health")
 async def health():
-    return {
-        "status": "healthy",
-        "environment": settings.environment,
-        "version": settings.app_version,
-    }
+    return ApiResponse.success_response({"status": "healthy"})
