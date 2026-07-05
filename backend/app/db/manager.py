@@ -1,7 +1,11 @@
+import logging
+
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
@@ -12,20 +16,37 @@ class DatabaseManager:
         self._database: AsyncDatabase | None = None
 
     async def connect(self) -> None:
-        """Connect to MongoDB."""
+        logger.info(
+            "Connecting to MongoDB database '%s'...",
+            settings.database_name,
+        )
 
-        self._client = AsyncMongoClient(settings.mongodb_uri)
+        try:
+            self._client = AsyncMongoClient(
+                settings.mongodb_uri,
+                serverSelectionTimeoutMS=5000,
+            )
 
-        # Verify the connection
-        await self._client.admin.command("ping")
+            await self._client.admin.command("ping")
 
-        self._database = self._client[settings.database_name]
+            self._database = self._client[settings.database_name]
+
+            logger.info(
+                "Connected to MongoDB database '%s'.",
+                settings.database_name,
+            )
+
+        except Exception:
+            logger.exception("Failed to connect to MongoDB.")
+            raise
 
     async def disconnect(self) -> None:
         """Close the MongoDB client."""
 
         if self._client is not None:
-            self._client.close()
+            logger.info("Closing MongoDB connection...")
+
+            await self._client.close()
 
             self._client = None
             self._database = None
