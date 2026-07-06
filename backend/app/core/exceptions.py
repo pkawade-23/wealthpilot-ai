@@ -30,3 +30,16 @@ class NotFoundException(AppException):
             code=code,
             status_code=HTTPStatus.NOT_FOUND,
         )
+
+
+class ConflictException(AppException):
+    def __init__(
+        self,
+        message: str,
+        code: str = "CONFLICT",
+    ) -> None:
+        super().__init__(
+            status_code=409,
+            message=message,
+            code=code,
+        )

@@ -51,7 +51,8 @@ class DatabaseManager:
             self._client = None
             self._database = None
 
-    def get_database(self) -> AsyncDatabase:
+    @property
+    def database(self) -> AsyncDatabase:
         """Return the configured database."""
 
         if self._database is None:
