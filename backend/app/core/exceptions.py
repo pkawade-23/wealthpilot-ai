@@ -43,3 +43,16 @@ class ConflictException(AppException):
             message=message,
             code=code,
         )
+
+
+class UnauthorizedException(AppException):
+    def __init__(
+        self,
+        message: str,
+        code: str = "UNAUTHORIZED",
+    ) -> None:
+        super().__init__(
+            status_code=401,
+            message=message,
+            code=code,
+        )

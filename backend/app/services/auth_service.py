@@ -1,8 +1,12 @@
-from app.core.exceptions import ConflictException
-from app.core.security import password_hasher
+from app.core.exceptions import ConflictException, UnauthorizedException
+from app.core.security import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import RegisterRequest
+from app.schemas.user import LoginRequest, RegisterRequest
 
 
 class AuthService:
@@ -21,7 +25,7 @@ class AuthService:
                 code="EMAIL_ALREADY_EXISTS",
             )
 
-        hashed_password = password_hasher.hash(request.password)
+        hashed_password = hash_password(request.password)
 
         user = User(
             email=request.email,
@@ -30,5 +34,19 @@ class AuthService:
 
         return await self.user_repository.create_user(user)
 
+    async def login(self, request: LoginRequest) -> str:
+        user = await self.user_repository.find_by_email(request.email)
 
-auth_service = AuthService(UserRepository())
+        if user is None:
+            raise UnauthorizedException(
+                message="Invalid email or password.",
+                code="INVALID_CREDENTIALS",
+            )
+
+        if not verify_password(request.password, user.password_hash):
+            raise UnauthorizedException(
+                message="Invalid email or password.",
+                code="INVALID_CREDENTIALS",
+            )
+
+        return create_access_token(user.id)
