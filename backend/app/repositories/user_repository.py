@@ -26,3 +26,13 @@ class UserRepository(BaseRepository):
         document["id"] = str(document.pop("_id"))
 
         return User.model_validate(document)
+
+    async def find_by_id(self, user_id: str) -> User | None:
+        document = await self.collection.find_one({"_id": user_id})
+
+        if document is None:
+            return None
+
+        document["id"] = str(document.pop("_id"))
+
+        return User.model_validate(document)
