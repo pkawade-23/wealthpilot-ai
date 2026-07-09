@@ -21,4 +21,4 @@ class BaseRepository(ABC):
 
     async def create(self, document: dict) -> str:
         result = await self.collection.insert_one(document)
-        return str(result.inserted_id)
+        return result.inserted_id

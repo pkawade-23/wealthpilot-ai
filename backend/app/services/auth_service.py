@@ -10,8 +10,8 @@ from app.schemas.user import LoginRequest, RegisterRequest
 
 
 class AuthService:
-    def __init__(self, user_repository: UserRepository) -> None:
-        self.user_repository = user_repository
+    def __init__(self) -> None:
+        self.user_repository = UserRepository()
 
     async def register(
         self,
@@ -50,3 +50,6 @@ class AuthService:
             )
 
         return create_access_token(user.id)
+
+    async def find_by_id(self, user_id: str) -> User | None:
+        return await self.user_repository.find_by_id(user_id)

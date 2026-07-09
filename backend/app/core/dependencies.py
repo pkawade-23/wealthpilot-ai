@@ -1,6 +1,6 @@
-from app.repositories.user_repository import UserRepository
+from app.services.account_service import AccountService
 from app.services.auth_service import AuthService
 
-user_repository = UserRepository()
+auth_service = AuthService()
 
-auth_service = AuthService(user_repository)
+account_service = AccountService()

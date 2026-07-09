@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app.models.user import User
 from app.repositories.base import BaseRepository
 
@@ -13,7 +15,7 @@ class UserRepository(BaseRepository):
         inserted_id = await self.create(document)
 
         return User(
-            id=inserted_id,
+            id=str(inserted_id),
             **document,
         )
 
@@ -28,7 +30,7 @@ class UserRepository(BaseRepository):
         return User.model_validate(document)
 
     async def find_by_id(self, user_id: str) -> User | None:
-        document = await self.collection.find_one({"_id": user_id})
+        document = await self.collection.find_one({"_id": ObjectId(user_id)})
 
         if document is None:
             return None
