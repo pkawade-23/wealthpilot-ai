@@ -1,6 +1,8 @@
 from app.core.exceptions import ConflictException
 from app.models.account import Account
 from app.models.user import User
+from app.query.models import CursorPage, map_cursor_page
+from app.query.params import QueryParams
 from app.repositories.account_repository import AccountRepository
 from app.schemas.account import AccountResponse, CreateAccountRequest
 
@@ -32,9 +34,16 @@ class AccountService:
     async def get_accounts(
         self,
         current_user: User,
-    ) -> list[AccountResponse]:
-        accounts = await self.account_repository.find_by_user(current_user.id)
-        return [AccountResponse.model_validate(account) for account in accounts]
+        query: QueryParams,
+    ) -> CursorPage[AccountResponse]:
+        accounts = await self.account_repository.find_by_user(
+            user_id=current_user.id,
+            query=query,
+        )
+        return map_cursor_page(
+            accounts,
+            AccountResponse,
+        )
 
     async def get_account_by_id(
         self,

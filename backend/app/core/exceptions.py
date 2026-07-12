@@ -39,7 +39,7 @@ class ConflictException(AppException):
         code: str = "CONFLICT",
     ) -> None:
         super().__init__(
-            status_code=409,
+            status_code=HTTPStatus.CONFLICT,
             message=message,
             code=code,
         )
@@ -52,7 +52,20 @@ class UnauthorizedException(AppException):
         code: str = "UNAUTHORIZED",
     ) -> None:
         super().__init__(
-            status_code=401,
+            status_code=HTTPStatus.UNAUTHORIZED,
+            message=message,
+            code=code,
+        )
+
+
+class BadRequestException(AppException):
+    def __init__(
+        self,
+        message: str,
+        code: str = "BAD_REQUEST",
+    ) -> None:
+        super().__init__(
+            status_code=HTTPStatus.BAD_REQUEST,
             message=message,
             code=code,
         )

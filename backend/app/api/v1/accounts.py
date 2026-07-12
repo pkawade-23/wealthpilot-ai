@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status
 from app.core.auth import get_current_user
 from app.core.dependencies import account_service
 from app.models.user import User
+from app.query.params import QueryParams
 from app.schemas.account import CreateAccountRequest
 from app.schemas.response import ApiResponse
 
@@ -27,10 +28,11 @@ async def create_account(
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def get_accounts(
+    query: QueryParams = Depends(),  # noqa: B008
     current_user: User = Depends(get_current_user),  # noqa: B008
 ):
     return ApiResponse.success_response(
-        await account_service.get_accounts(current_user)
+        await account_service.get_accounts(current_user, query)
     )
 
 

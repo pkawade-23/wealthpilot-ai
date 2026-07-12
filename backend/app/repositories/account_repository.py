@@ -3,6 +3,9 @@ from datetime import UTC, datetime
 from bson import ObjectId
 
 from app.models.account import Account
+from app.query.models import CursorPage
+from app.query.paginator import paginate
+from app.query.params import QueryParams
 from app.repositories.base import BaseRepository
 
 
@@ -32,14 +35,14 @@ class AccountRepository(BaseRepository):
     async def find_by_user(
         self,
         user_id: str,
-    ) -> list[Account]:
-        cursor = self.collection.find({"user_id": user_id})
-        accounts = []
-
-        async for document in cursor:
-            accounts.append(self._to_model(document))
-
-        return accounts
+        query: QueryParams,
+    ) -> CursorPage[Account]:
+        return await paginate(
+            collection=self.collection,
+            filter={"user_id": user_id},
+            query=query,
+            model=Account,
+        )
 
     async def create(
         self,

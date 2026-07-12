@@ -7,6 +7,7 @@ from app.db.manager import db_manager
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
