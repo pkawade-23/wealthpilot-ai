@@ -22,7 +22,8 @@ async def create_account(
         await account_service.create_account(
             current_user,
             request,
-        )
+        ),
+        message="Account created successfully.",
     )
 
 
@@ -32,7 +33,8 @@ async def get_accounts(
     current_user: User = Depends(get_current_user),  # noqa: B008
 ):
     return ApiResponse.success_response(
-        await account_service.get_accounts(current_user, query)
+        await account_service.get_accounts(current_user, query),
+        message="Accounts retrieved successfully.",
     )
 
 
@@ -42,7 +44,9 @@ async def get_account_by_id(
     current_user: User = Depends(get_current_user),  # noqa: B008
 ):
     account = await account_service.get_account_by_id(account_id, current_user)
-    return ApiResponse.success_response(account)
+    return ApiResponse.success_response(
+        account, message="Account retrieved successfully."
+    )
 
 
 @router.patch("/{account_id}", status_code=status.HTTP_200_OK)
@@ -52,7 +56,9 @@ async def update_account(
     current_user: User = Depends(get_current_user),  # noqa: B008
 ):
     account = await account_service.update_account(account_id, request, current_user)
-    return ApiResponse.success_response(account)
+    return ApiResponse.success_response(
+        account, message="Account updated successfully."
+    )
 
 
 @router.delete("/{account_id}", status_code=status.HTTP_200_OK)
