@@ -5,13 +5,21 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.repositories.category_repository import (
+    CategoryRepository as category_repository,
+)
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import LoginRequest, RegisterRequest
 
 
 class AuthService:
-    def __init__(self) -> None:
-        self.user_repository = UserRepository()
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        category_repository: category_repository,
+    ) -> None:
+        self.user_repository = user_repository
+        self.category_repository = category_repository
 
     async def register(
         self,
@@ -32,7 +40,11 @@ class AuthService:
             password_hash=hashed_password,
         )
 
-        return await self.user_repository.create_user(user)
+        user = await self.user_repository.create_user(user)
+
+        await self.category_repository.seed_default_categories(user.id)
+
+        return user
 
     async def login(self, request: LoginRequest) -> str:
         user = await self.user_repository.find_by_email(request.email)

@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import TypeVar
 
 from pymongo.asynchronous.collection import AsyncCollection
 
 from app.db.manager import db_manager
+
+T = TypeVar("T")
 
 
 class BaseRepository(ABC):
@@ -22,3 +25,12 @@ class BaseRepository(ABC):
     async def create(self, document: dict) -> str:
         result = await self.collection.insert_one(document)
         return result.inserted_id
+
+    async def create_many(
+        self,
+        documents: list[dict],
+    ) -> list[str]:
+
+        result = await self.collection.insert_many(documents)
+
+        return [str(id) for id in result.inserted_ids]

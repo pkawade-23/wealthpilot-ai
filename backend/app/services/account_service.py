@@ -8,8 +8,8 @@ from app.schemas.account import AccountResponse, CreateAccountRequest
 
 
 class AccountService:
-    def __init__(self) -> None:
-        self.account_repository = AccountRepository()
+    def __init__(self, account_repository: AccountRepository) -> None:
+        self.account_repository = account_repository
 
     async def create_account(
         self,
