@@ -23,7 +23,12 @@ class CategoryRepository(BaseRepository):
         return Category.model_validate(document)
 
     async def find_by_id(self, category_id: str) -> Category | None:
-        document = await self.collection.find_one({"_id": ObjectId(category_id)})
+        document = await self.collection.find_one(
+            self._merge_filters(
+                self._active_filter(),
+                {"_id": ObjectId(category_id)},
+            )
+        )
 
         if document is None:
             return None
@@ -37,7 +42,10 @@ class CategoryRepository(BaseRepository):
     ) -> CursorPage[Category]:
         return await paginate(
             collection=self.collection,
-            filter={"user_id": user_id},
+            filter=self._merge_filters(
+                self._active_filter(),
+                {"user_id": user_id},
+            ),
             query=query,
             model=Category,
         )
@@ -49,7 +57,14 @@ class CategoryRepository(BaseRepository):
         type: str,
     ) -> Category | None:
         document = await self.collection.find_one(
-            {"user_id": user_id, "name": name, "type": type}
+            self._merge_filters(
+                self._active_filter(),
+                {
+                    "user_id": user_id,
+                    "name": name,
+                    "type": type,
+                },
+            )
         )
 
         if document is None:
@@ -92,11 +107,7 @@ class CategoryRepository(BaseRepository):
         self,
         category_id: str,
     ) -> bool:
-        category = await self.find_by_id(category_id)
-        if category is None:
-            return False
-        await self.collection.delete_one({"_id": ObjectId(category_id)})
-        return True
+        return await self.soft_delete(category_id)
 
     async def seed_default_categories(
         self,
@@ -108,6 +119,7 @@ class CategoryRepository(BaseRepository):
                 "name": category.name,
                 "type": category.type,
                 "is_system": True,
+                "is_deleted": False,
             }
             for category in DEFAULT_CATEGORIES
         ]

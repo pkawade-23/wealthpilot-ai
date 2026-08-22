@@ -21,3 +21,5 @@ class Category(BaseModel):
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
     )
+
+    is_deleted: bool = False

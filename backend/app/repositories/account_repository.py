@@ -25,12 +25,35 @@ class AccountRepository(BaseRepository):
         self,
         account_id: str,
     ) -> Account | None:
-        document = await self.collection.find_one({"_id": ObjectId(account_id)})
+        document = await self.collection.find_one(
+            self._merge_filters(
+                self._active_filter(),
+                {"_id": ObjectId(account_id)},
+            )
+        )
 
         if document is None:
             return None
 
         return self._to_model(document)
+
+    # async def find_by_user(
+    #     self,
+    #     user_id: str,
+    #     query: QueryParams,
+    # ) -> CursorPage[Account]:
+    #     filter = (
+    #         self._merge_filters(
+    #             self._active_filter(),
+    #             {"user_id": user_id},
+    #         ),
+    #     )
+    #     return await paginate(
+    #         collection=self.collection,
+    #         filter=filter,
+    #         query=query,
+    #         model=Account,
+    #     )
 
     async def find_by_user(
         self,
@@ -39,7 +62,10 @@ class AccountRepository(BaseRepository):
     ) -> CursorPage[Account]:
         return await paginate(
             collection=self.collection,
-            filter={"user_id": user_id},
+            filter=self._merge_filters(
+                self._active_filter(),
+                {"user_id": user_id},
+            ),
             query=query,
             model=Account,
         )
@@ -76,18 +102,21 @@ class AccountRepository(BaseRepository):
         self,
         account_id: str,
     ) -> bool:
-        account = await self.find_by_id(account_id)
-        if account is None:
-            return False
-        await self.collection.delete_one({"_id": ObjectId(account_id)})
-        return True
+        return await self.soft_delete(account_id)
 
     async def find_by_user_and_name(
         self,
         user_id: str,
         name: str,
     ) -> Account | None:
-        document = await self.collection.find_one({"user_id": user_id, "name": name})
+        filter = self._merge_filters(
+            self._active_filter(),
+            {
+                "user_id": user_id,
+                "name": name,
+            },
+        )
+        document = await self.collection.find_one(filter)
 
         if document is None:
             return None
