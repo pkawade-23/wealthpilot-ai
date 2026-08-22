@@ -62,6 +62,9 @@ The project is being built as a production-quality application with clean archit
 * Dockerized MongoDB
 * Database manager
 * Application lifecycle
+* Cursor-based pagination
+* Generic sorting
+* Dependency Injection
 
 ### Architecture
 
@@ -101,11 +104,10 @@ The project is being built as a production-quality application with clean archit
 ## 🚧 Phase 2 — Financial Domain
 
 ### Categories
-
-* Category model
+* CRUD
 * System categories
-* User-defined categories
-* Category management API
+* User categories
+* Automatic default category seeding
 
 ### Transactions
 
@@ -208,9 +210,13 @@ Each major feature follows the same lifecycle:
 
 # Current Status
 
-**Current Phase:** Phase 2 — Financial Domain
+Current Phase: Phase 2 — Financial Domain
 
-**Next Milestone:** Category Module
+Completed:
+✔ Categories
+
+Next Milestone:
+Transactions Module
 
 **Long-Term Goal:** Deliver an AI-powered personal finance platform capable of securely ingesting financial data, providing intelligent insights, and acting as a conversational financial assistant.
 
