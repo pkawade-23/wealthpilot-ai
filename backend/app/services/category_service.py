@@ -1,18 +1,22 @@
 from app.core.exceptions import ConflictException
 from app.models.category import Category
+from app.models.enums import AuditAction
 from app.models.user import User
 from app.query.models import CursorPage, map_cursor_page
 from app.query.params import QueryParams
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.category import CategoryResponse, CreateCategoryRequest
+from app.services.audit_service import AuditService
 
 
 class CategoryService:
     def __init__(
         self,
         category_repository: CategoryRepository,
+        audit_service: AuditService,
     ) -> None:
         self.category_repository = category_repository
+        self.audit_service = audit_service
 
     async def create_category(
         self,
@@ -31,6 +35,14 @@ class CategoryService:
         request.name = request.name.strip()
         category = Category(user_id=current_user.id, **request.model_dump())
         created_category = await self.category_repository.create(category)
+
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.category_repository.collection_name,
+            document_id=created_category.id,
+            action=AuditAction.CREATE,
+            after=created_category.model_dump(),
+        )
 
         return CategoryResponse.model_validate(created_category)
 
@@ -86,7 +98,7 @@ class CategoryService:
         existing_category = await self.category_repository.find_by_name(
             current_user.id, request.name, request.type
         )
-        if existing_category is not None and existing_category.id != existing_category:
+        if existing_category is not None and existing_category.id != category_id:
             raise ConflictException(
                 message="Category with this name already exists for the user.",
                 code="CATEGORY_ALREADY_EXISTS",
@@ -97,11 +109,20 @@ class CategoryService:
             user_id=category.user_id,
             **request.model_dump(),
         )
-        updated_account = await self.category_repository.update(
+        updated_category = await self.category_repository.update(
             category_id, updated_category_data
         )
 
-        return CategoryResponse.model_validate(updated_account)
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.category_repository.collection_name,
+            document_id=category_id,
+            action=AuditAction.UPDATE,
+            before=category.model_dump(),
+            after=updated_category.model_dump(),
+        )
+
+        return CategoryResponse.model_validate(updated_category)
 
     async def delete_category(
         self,
@@ -121,6 +142,17 @@ class CategoryService:
                 message="System categories cannot be deleted.", code="SYSTEM_CATEGORY"
             )
 
+        state_before_delete = category.model_dump()
+
         await self.category_repository.delete(category_id)
+
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.category_repository.collection_name,
+            document_id=category_id,
+            action=AuditAction.DELETE,
+            before=state_before_delete,
+            after={**state_before_delete, "is_deleted": True},
+        )
 
         return CategoryResponse.model_validate(category)

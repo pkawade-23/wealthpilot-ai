@@ -15,11 +15,7 @@ class Account(BaseModel):
     currency: str = "INR"
 
     created_at: datetime | None = None
-    updated_at: datetime = (
-        (
-            Field(
-                default_factory=lambda: datetime.now(UTC),
-            ),
-        ),
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
     )
     is_deleted: bool = False

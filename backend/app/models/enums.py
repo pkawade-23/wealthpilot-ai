@@ -39,3 +39,9 @@ DEFAULT_CATEGORIES = [
     DefaultCategory("Travel", CategoryType.EXPENSE),
     DefaultCategory("Education", CategoryType.EXPENSE),
 ]
+
+
+class AuditAction(StrEnum):
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"

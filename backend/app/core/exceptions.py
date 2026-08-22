@@ -58,6 +58,19 @@ class UnauthorizedException(AppException):
         )
 
 
+class ForbiddenException(AppException):
+    def __init__(
+        self,
+        message: str,
+        code: str = "FORBIDDEN",
+    ) -> None:
+        super().__init__(
+            status_code=HTTPStatus.FORBIDDEN,
+            message=message,
+            code=code,
+        )
+
+
 class BadRequestException(AppException):
     def __init__(
         self,

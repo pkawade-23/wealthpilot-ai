@@ -1,15 +1,22 @@
 from app.core.exceptions import ConflictException
 from app.models.account import Account
+from app.models.enums import AuditAction
 from app.models.user import User
 from app.query.models import CursorPage, map_cursor_page
 from app.query.params import QueryParams
 from app.repositories.account_repository import AccountRepository
 from app.schemas.account import AccountResponse, CreateAccountRequest
+from app.services.audit_service import AuditService
 
 
 class AccountService:
-    def __init__(self, account_repository: AccountRepository) -> None:
+    def __init__(
+        self,
+        account_repository: AccountRepository,
+        audit_service: AuditService,
+    ) -> None:
         self.account_repository = account_repository
+        self.audit_service = audit_service
 
     async def create_account(
         self,
@@ -28,6 +35,14 @@ class AccountService:
 
         account = Account(user_id=current_user.id, **request.model_dump())
         created_account = await self.account_repository.create(account)
+
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.account_repository.collection_name,
+            document_id=created_account.id,
+            action=AuditAction.CREATE,
+            after=created_account.model_dump(),
+        )
 
         return AccountResponse.model_validate(created_account)
 
@@ -93,6 +108,15 @@ class AccountService:
             account_id, updated_account_data
         )
 
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.account_repository.collection_name,
+            document_id=account_id,
+            action=AuditAction.UPDATE,
+            before=account.model_dump(),
+            after=updated_account.model_dump(),
+        )
+
         return AccountResponse.model_validate(updated_account)
 
     async def delete_account(
@@ -108,6 +132,17 @@ class AccountService:
                 code="ACCOUNT_NOT_FOUND",
             )
 
+        state_before_delete = account.model_dump()
+
         await self.account_repository.delete(account_id)
+
+        await self.audit_service.create_audit_trail(
+            user_id=current_user.id,
+            collection=self.account_repository.collection_name,
+            document_id=account_id,
+            action=AuditAction.DELETE,
+            before=state_before_delete,
+            after={**state_before_delete, "is_deleted": True},
+        )
 
         return AccountResponse.model_validate(account)
