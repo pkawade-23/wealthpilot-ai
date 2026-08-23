@@ -1,5 +1,8 @@
 import logging
+from decimal import Decimal
 from typing import Any
+
+from bson.decimal128 import Decimal128
 
 from app.models.audit_trail import AuditTrail
 from app.models.enums import AuditAction
@@ -9,6 +12,17 @@ from app.repositories.audit_repository import AuditRepository
 from app.schemas.audit_trail import AuditTrailResponse
 
 logger = logging.getLogger(__name__)
+
+
+def _convert_decimals(obj: Any) -> Any:
+    """Recursively convert Decimal to Decimal128 for MongoDB storage."""
+    if isinstance(obj, Decimal):
+        return Decimal128(obj)
+    if isinstance(obj, dict):
+        return {k: _convert_decimals(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_decimals(v) for v in obj]
+    return obj
 
 
 class AuditService:
@@ -44,9 +58,9 @@ class AuditService:
             collection=collection,
             document_id=document_id,
             action=action,
-            before=before,
-            after=after,
-            metadata=metadata,
+            before=_convert_decimals(before),
+            after=_convert_decimals(after),
+            metadata=_convert_decimals(metadata),
         )
 
         try:

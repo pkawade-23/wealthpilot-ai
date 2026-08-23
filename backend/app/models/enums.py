@@ -45,3 +45,10 @@ class AuditAction(StrEnum):
     CREATE = "CREATE"
     UPDATE = "UPDATE"
     DELETE = "DELETE"
+
+
+class TransactionType(StrEnum):
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
+    TRANSFER = "TRANSFER"
+    ADJUSTMENT = "ADJUSTMENT"

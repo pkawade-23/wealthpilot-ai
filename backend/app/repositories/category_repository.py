@@ -98,7 +98,11 @@ class CategoryRepository(BaseRepository):
             return await self.find_by_id(category_id)
 
         await self.collection.update_one(
-            {"_id": ObjectId(category_id)}, {"$set": document}
+            self._merge_filters(
+                self._active_filter(),
+                {"_id": ObjectId(category_id)},
+            ),
+            {"$set": document},
         )
 
         return await self.find_by_id(category_id)

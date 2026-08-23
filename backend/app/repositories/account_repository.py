@@ -94,7 +94,11 @@ class AccountRepository(BaseRepository):
         if not document:
             return await self.find_by_id(account_id)
         await self.collection.update_one(
-            {"_id": ObjectId(account_id)}, {"$set": document}
+            self._merge_filters(
+                self._active_filter(),
+                {"_id": ObjectId(account_id)},
+            ),
+            {"$set": document},
         )
         return await self.find_by_id(account_id)
 
