@@ -1,6 +1,9 @@
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pymongo.asynchronous.client_session import AsyncClientSession
 
 from bson.decimal128 import Decimal128
 
@@ -52,6 +55,8 @@ class AuditService:
         before: dict[str, Any] | None = None,
         after: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
+        session: AsyncClientSession | None = None,
+        raise_on_error: bool = False,
     ) -> str | None:
         audit_trail = AuditTrail(
             user_id=user_id,
@@ -64,7 +69,7 @@ class AuditService:
         )
 
         try:
-            return await self.audit_repository.create(audit_trail)
+            return await self.audit_repository.create(audit_trail, session=session)
         except Exception:
             logger.exception(
                 "Failed to record %s audit trail for %s/%s",
@@ -72,4 +77,6 @@ class AuditService:
                 collection,
                 document_id,
             )
+            if raise_on_error:
+                raise
             return None

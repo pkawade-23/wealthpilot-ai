@@ -1,6 +1,10 @@
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from bson import ObjectId
+
+if TYPE_CHECKING:
+    from pymongo.asynchronous.client_session import AsyncClientSession
 
 from app.models.account import Account
 from app.query.models import CursorPage
@@ -73,10 +77,11 @@ class AccountRepository(BaseRepository):
     async def create(
         self,
         account_data: Account,
+        session: AsyncClientSession | None = None,
     ) -> Account:
         document = account_data.model_dump(exclude={"id"})
         document["created_at"] = datetime.now(UTC)
-        inserted_id = await super().create(document)
+        inserted_id = await super().create(document, session=session)
         return Account(
             id=str(inserted_id),
             **document,
@@ -86,6 +91,7 @@ class AccountRepository(BaseRepository):
         self,
         account_id: str,
         update_data: Account,
+        session: AsyncClientSession | None = None,
     ) -> Account | None:
         document = update_data.model_dump(
             exclude={"id", "created_at"},
@@ -93,20 +99,22 @@ class AccountRepository(BaseRepository):
         )
         if not document:
             return await self.find_by_id(account_id)
-        await self.collection.update_one(
+        await super().update_one(
             self._merge_filters(
                 self._active_filter(),
                 {"_id": ObjectId(account_id)},
             ),
             {"$set": document},
+            session=session,
         )
         return await self.find_by_id(account_id)
 
     async def delete(
         self,
         account_id: str,
+        session: AsyncClientSession | None = None,
     ) -> bool:
-        return await self.soft_delete(account_id)
+        return await self.soft_delete(account_id, session=session)
 
     async def find_by_user_and_name(
         self,

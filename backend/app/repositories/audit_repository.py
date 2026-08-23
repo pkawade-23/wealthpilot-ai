@@ -1,3 +1,8 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pymongo.asynchronous.client_session import AsyncClientSession
+
 from app.models.audit_trail import AuditTrail
 from app.query.models import CursorPage
 from app.query.paginator import paginate
@@ -25,9 +30,10 @@ class AuditRepository(BaseRepository):
     async def create(
         self,
         audit: AuditTrail,
+        session: AsyncClientSession | None = None,
     ) -> str:
         document = audit.model_dump(
             exclude={"id"},
         )
 
-        return await super().create(document)
+        return await super().create(document, session=session)

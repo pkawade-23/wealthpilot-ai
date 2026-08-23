@@ -1,7 +1,12 @@
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass
 
 from app.core.exceptions import ConflictException
+from app.db.manager import db_manager
 from app.models.enums import AuditAction, TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -214,55 +219,64 @@ class TransactionService:
 
         transfer_id = str(uuid.uuid4())
 
-        source_transaction = Transaction(
-            user_id=current_user.id,
-            account_id=request.source_account_id,
-            category_id=None,
-            type=TransactionType.TRANSFER,
-            amount=request.amount,
-            currency=request.currency,
-            transaction_date=request.transaction_date,
-            merchant=None,
-            description=request.description,
-            reference=request.reference,
-            transfer_id=transfer_id,
-            is_deleted=False,
-        )
-        created_source = await self.transaction_repository.create(source_transaction)
+        session = db_manager.start_session()
+        async with session:
+            async with await session.start_transaction():
+                source_transaction = Transaction(
+                    user_id=current_user.id,
+                    account_id=request.source_account_id,
+                    category_id=None,
+                    type=TransactionType.TRANSFER,
+                    amount=request.amount,
+                    currency=request.currency,
+                    transaction_date=request.transaction_date,
+                    merchant=None,
+                    description=request.description,
+                    reference=request.reference,
+                    transfer_id=transfer_id,
+                    is_deleted=False,
+                )
+                created_source = await self.transaction_repository.create(
+                    source_transaction, session=session
+                )
 
-        destination_transaction = Transaction(
-            user_id=current_user.id,
-            account_id=request.destination_account_id,
-            category_id=None,
-            type=TransactionType.TRANSFER,
-            amount=request.amount,
-            currency=request.currency,
-            transaction_date=request.transaction_date,
-            merchant=None,
-            description=request.description,
-            reference=request.reference,
-            transfer_id=transfer_id,
-            is_deleted=False,
-        )
-        created_destination = await self.transaction_repository.create(
-            destination_transaction
-        )
+                destination_transaction = Transaction(
+                    user_id=current_user.id,
+                    account_id=request.destination_account_id,
+                    category_id=None,
+                    type=TransactionType.TRANSFER,
+                    amount=request.amount,
+                    currency=request.currency,
+                    transaction_date=request.transaction_date,
+                    merchant=None,
+                    description=request.description,
+                    reference=request.reference,
+                    transfer_id=transfer_id,
+                    is_deleted=False,
+                )
+                created_destination = await self.transaction_repository.create(
+                    destination_transaction, session=session
+                )
 
-        await self.audit_service.create_audit_trail(
-            user_id=current_user.id,
-            collection=self.transaction_repository.collection_name,
-            document_id=created_source.id,
-            action=AuditAction.CREATE,
-            after=created_source.model_dump(),
-        )
+                await self.audit_service.create_audit_trail(
+                    user_id=current_user.id,
+                    collection=self.transaction_repository.collection_name,
+                    document_id=created_source.id,
+                    action=AuditAction.CREATE,
+                    after=created_source.model_dump(),
+                    session=session,
+                    raise_on_error=True,
+                )
 
-        await self.audit_service.create_audit_trail(
-            user_id=current_user.id,
-            collection=self.transaction_repository.collection_name,
-            document_id=created_destination.id,
-            action=AuditAction.CREATE,
-            after=created_destination.model_dump(),
-        )
+                await self.audit_service.create_audit_trail(
+                    user_id=current_user.id,
+                    collection=self.transaction_repository.collection_name,
+                    document_id=created_destination.id,
+                    action=AuditAction.CREATE,
+                    after=created_destination.model_dump(),
+                    session=session,
+                    raise_on_error=True,
+                )
 
         return (
             TransactionResponse.model_validate(created_source),

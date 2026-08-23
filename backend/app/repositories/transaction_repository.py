@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from bson import ObjectId
 from bson.decimal128 import Decimal128
+
+if TYPE_CHECKING:
+    from pymongo.asynchronous.client_session import AsyncClientSession
 
 from app.models.transaction import Transaction
 from app.query.models import CursorPage
@@ -54,6 +59,7 @@ class TransactionRepository(BaseRepository):
     async def create(
         self,
         transaction_data: Transaction,
+        session: AsyncClientSession | None = None,
     ) -> Transaction:
         document = transaction_data.model_dump(exclude={"id"})
         insertable_document = {
@@ -61,7 +67,7 @@ class TransactionRepository(BaseRepository):
             "amount": Decimal128(document["amount"]),
         }
 
-        inserted_id = await super().create(insertable_document)
+        inserted_id = await super().create(insertable_document, session=session)
 
         return Transaction(
             id=str(inserted_id),
@@ -72,6 +78,7 @@ class TransactionRepository(BaseRepository):
         self,
         transaction_id: str,
         update_data: Transaction,
+        session: AsyncClientSession | None = None,
     ) -> Transaction | None:
         document = update_data.model_dump(
             exclude={"id", "created_at"},
@@ -84,12 +91,13 @@ class TransactionRepository(BaseRepository):
         if "amount" in document:
             document["amount"] = Decimal128(document["amount"])
 
-        await self.collection.update_one(
+        await super().update_one(
             self._merge_filters(
                 self._active_filter(),
                 {"_id": ObjectId(transaction_id)},
             ),
             {"$set": document},
+            session=session,
         )
 
         return await self.find_by_id(transaction_id)
@@ -97,5 +105,6 @@ class TransactionRepository(BaseRepository):
     async def delete(
         self,
         transaction_id: str,
+        session: AsyncClientSession | None = None,
     ) -> bool:
-        return await self.soft_delete(transaction_id)
+        return await self.soft_delete(transaction_id, session=session)

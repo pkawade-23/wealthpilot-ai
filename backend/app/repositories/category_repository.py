@@ -1,6 +1,10 @@
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from bson import ObjectId
+
+if TYPE_CHECKING:
+    from pymongo.asynchronous.client_session import AsyncClientSession
 
 from app.models.category import Category
 from app.models.enums import DEFAULT_CATEGORIES
@@ -75,10 +79,11 @@ class CategoryRepository(BaseRepository):
     async def create(
         self,
         category_data: Category,
+        session: AsyncClientSession | None = None,
     ) -> Category:
         document = category_data.model_dump(exclude={"id"})
         document["created_at"] = datetime.now(UTC)
-        inserted_id = await super().create(document)
+        inserted_id = await super().create(document, session=session)
         return Category(
             id=str(inserted_id),
             **document,
@@ -88,6 +93,7 @@ class CategoryRepository(BaseRepository):
         self,
         category_id: str,
         update_data: Category,
+        session: AsyncClientSession | None = None,
     ) -> Category | None:
         document = update_data.model_dump(
             exclude={"id", "created_at"},
@@ -97,12 +103,13 @@ class CategoryRepository(BaseRepository):
         if not document:
             return await self.find_by_id(category_id)
 
-        await self.collection.update_one(
+        await super().update_one(
             self._merge_filters(
                 self._active_filter(),
                 {"_id": ObjectId(category_id)},
             ),
             {"$set": document},
+            session=session,
         )
 
         return await self.find_by_id(category_id)
@@ -110,12 +117,14 @@ class CategoryRepository(BaseRepository):
     async def delete(
         self,
         category_id: str,
+        session: AsyncClientSession | None = None,
     ) -> bool:
-        return await self.soft_delete(category_id)
+        return await self.soft_delete(category_id, session=session)
 
     async def seed_default_categories(
         self,
         user_id: str,
+        session: AsyncClientSession | None = None,
     ) -> None:
         documents = [
             {
@@ -128,4 +137,4 @@ class CategoryRepository(BaseRepository):
             for category in DEFAULT_CATEGORIES
         ]
 
-        await self.create_many(documents)
+        await super().create_many(documents, session=session)

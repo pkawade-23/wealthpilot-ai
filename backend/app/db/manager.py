@@ -1,6 +1,7 @@
 import logging
 
 from pymongo import AsyncMongoClient
+from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.asynchronous.database import AsyncDatabase
 
 from app.core.config import settings
@@ -59,6 +60,14 @@ class DatabaseManager:
             raise RuntimeError("Database has not been initialized.")
 
         return self._database
+
+    def start_session(self) -> AsyncClientSession:
+        """Create a new client session for transactions."""
+
+        if self._client is None:
+            raise RuntimeError("MongoDB client has not been initialized.")
+
+        return self._client.start_session()
 
 
 db_manager = DatabaseManager()
