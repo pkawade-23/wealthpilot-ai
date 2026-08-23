@@ -11,13 +11,13 @@ from app.models.enums import AuditAction, TransactionType
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.query.models import CursorPage, map_cursor_page
-from app.query.params import QueryParams
 from app.repositories.account_repository import AccountRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import (
     CreateTransactionRequest,
     CreateTransferRequest,
+    TransactionQueryParams,
     TransactionResponse,
     UpdateTransactionRequest,
 )
@@ -77,7 +77,7 @@ class TransactionService:
     async def get_transactions(
         self,
         current_user: User,
-        query: QueryParams,
+        query: TransactionQueryParams,
     ) -> CursorPage[TransactionResponse]:
         transactions = await self.transaction_repository.find_by_user(
             user_id=current_user.id,
