@@ -82,3 +82,16 @@ class BadRequestException(AppException):
             message=message,
             code=code,
         )
+
+
+class ValidationException(AppException):
+    def __init__(
+        self,
+        message: str,
+        code: str = "VALIDATION_ERROR",
+    ) -> None:
+        super().__init__(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            message=message,
+            code=code,
+        )

@@ -5,6 +5,7 @@ from app.api.v1.audit_trails import router as audit_trails_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.health import router as health_router
+from app.api.v1.reports import router as reports_router
 from app.api.v1.system import router as system_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.user import router as users_router
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
     app.include_router(accounts_router)
     app.include_router(categories_router)
     app.include_router(transactions_router)
+    app.include_router(reports_router)
     app.include_router(audit_trails_router)
 
     return app
